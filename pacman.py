@@ -94,6 +94,10 @@ class GameRenderer:
             pygame.display.flip()
             self._clock.tick(in_fps)
             self._screen.fill(black)
+
+            cookie_count = len(self._cookies)
+            print("Quantidade de cookies:", cookie_count)
+
             self._handle_events()
         print("Game over")
 
@@ -200,6 +204,7 @@ class Hero(MovableObject):
     def __init__(self, in_surface, x, y, in_size: int):
         super().__init__(in_surface, x, y, in_size, (255, 255, 0), False)
         self.last_non_colliding_position = (0, 0)
+        self.cookies_picked = 0
 
     def tick(self):
         # TELEPORT
@@ -208,6 +213,12 @@ class Hero(MovableObject):
 
         if self.x > self._renderer._width:
             self.x = 0
+        
+        if self.y < 0:
+            self.y = self._renderer._height
+
+        if self.y > self._renderer._height:
+            self.y = 32
 
         self.last_non_colliding_position = self.get_position()
 
@@ -238,13 +249,20 @@ class Hero(MovableObject):
         collision_rect = pygame.Rect(self.x, self.y, self._size, self._size)
         cookies = self._renderer.get_cookies()
         game_objects = self._renderer.get_game_objects()
+        cookies_picked = 0
+
         for cookie in cookies:
             collides = collision_rect.colliderect(cookie.get_shape())
             if collides and cookie in game_objects:
                 game_objects.remove(cookie)
+                cookies_picked += 1
+        
+        # self.cookies_picked += cookies_picked
+        # print("Cookies picked:", self.cookies_picked)
 
     def draw(self):
-        half_size = self._size / 2
+        super().draw()
+        half_size = self._size // 2
         pygame.draw.circle(self._surface, self._color,
                            (self.x + half_size, self.y + half_size), half_size)
 
@@ -367,28 +385,6 @@ if __name__ == "__main__":
         for x, column in enumerate(row):
             if column == 0:
                 game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
-
-    # Vykresleni cesty
-    # red = (255, 0, 0)
-    # green = (0, 255, 0)
-    # _from = (1, 1)
-    # _to = (24, 24)
-    # path_array = pacman_game.p.get_path(_from[1], _from[0], _to[1], _to[0])
-    #
-    # print(path_array)
-    # # [(1, 2), (1, 3), (1, 4), (1, 5), (2, 5), (3, 5), (4, 5), (5, 5), (6, 5), (6, 6), (6, 7) ...
-    #
-    # white = (255, 255, 255)
-    # for path in path_array:
-    #     game_renderer.add_game_object(Wall(game_renderer, path[0], path[1], unified_size, white))
-    #
-    # from_translated = translate_maze_to_screen(_from)
-    # game_renderer.add_game_object(
-    #     GameObject(game_renderer, from_translated[0], from_translated[1], unified_size, red))
-    #
-    # to_translated = translate_maze_to_screen(_to)
-    # game_renderer.add_game_object(
-    #     GameObject(game_renderer, to_translated[0], to_translated[1], unified_size, green))
 
     for cookie_space in pacman_game.cookie_spaces:
         translated = translate_maze_to_screen(cookie_space)
